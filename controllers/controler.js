@@ -277,9 +277,6 @@ const uploadAvatar = async (req, res, next) => {
       });
     }
 
-    // const image = await Jimp.read(req.file.path);
-    // await image.resize(200, 200).write(req.file.path);
-
     const uniqueFilename = `${req.user._id}-${Date.now()}${path.extname(
       req.file.originalname
     )}`;
@@ -289,7 +286,22 @@ const uploadAvatar = async (req, res, next) => {
       `../public/avatars/${uniqueFilename}`
     );
 
-    fs.renameSync(req.file.path, destinationPath);
+    await Jimp.read(req.file.path)
+      .then((image) => {
+        return image
+          .resize(350, 350)
+          .quality(60)
+          .greyscale()
+          .writeAsync(destinationPath);
+      })
+      .then(() => {
+        fs.unlinkSync(req.file.path);
+      })
+      .catch((error) => {
+        throw error;
+      });
+
+    // fs.renameSync(req.file.path, destinationPath);
 
     req.user.avatarUrl = `/avatars/${uniqueFilename}`;
 
